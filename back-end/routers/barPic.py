@@ -6,7 +6,6 @@ from PIL.ExifTags import GPSTAGS, TAGS
 from ai import geminiConnection
 import json
 
-
 router = APIRouter()
 
 #Upload image and get gemimi response return.
