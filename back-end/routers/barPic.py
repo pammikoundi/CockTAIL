@@ -10,7 +10,7 @@ router = APIRouter()
 
 #Upload image and get gemimi response return.
 @router.post("/upload/", status_code=status.HTTP_201_CREATED)
-async def upload_file(source_file: UploadFile = File(), db: Session = Depends(database.get_db)):
+async def upload_file(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   
     if(source_file.content_type.find("image/") == -1):
@@ -23,8 +23,7 @@ async def upload_file(source_file: UploadFile = File(), db: Session = Depends(da
 
     try:
         #Get ai response and parse for just the message
-        ai_response = llmInterface.image_analysis_call(file_content, source_file.content_type)
-        ai_token_use = ""
+        ai_response = geminiConnection.image_analysis_call(file_content, source_file.content_type)
         ai_response = ""
         print(ai_response)
 
