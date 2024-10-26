@@ -7,7 +7,7 @@ def image_analysis_call(image, content_type):
     genai.configure(api_key="AIzaSyC7gKrKaJbpv9Tjn8d-4bQMUKCt9eOpin8")
     #print(f"{myfile=}")
 
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-pro')
     #response = model.generate_content("The opposite of hot is")
     #print(response.text)
 
