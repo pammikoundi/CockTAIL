@@ -1,0 +1,7 @@
+#ASGI Server
+uvicorn
+#API framework
+fastapi
+#Image manipulation
+pillow
+#Artificial Intelligence
