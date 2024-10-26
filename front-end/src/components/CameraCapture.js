@@ -125,7 +125,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       const formData = new FormData();
       formData.append('source_file', blob, 'photo.jpg');
 
-      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/alc', {
+      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/nonalc', {
         method: 'POST',
         body: formData
       });

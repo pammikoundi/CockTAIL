@@ -8,7 +8,7 @@ import json
 router = APIRouter()
 
 #Upload image and get gemimi response return.
-@router.post("/upload/alc", status_code=status.HTTP_201_CREATED)
+@router.post("/upload/alc", status_code=status.HTTP_200_OK)
 async def upload_file(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   
@@ -29,7 +29,7 @@ async def upload_file(source_file: UploadFile = File()):
     return {"Response":ai_json}
 
 #Upload image and get gemimi response return.
-@router.post("/upload/nonalc", status_code=status.HTTP_201_CREATED)
+@router.post("/upload/nonalc", status_code=status.HTTP_200_OK)
 async def upload_file(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   

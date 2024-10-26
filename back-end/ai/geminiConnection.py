@@ -14,7 +14,7 @@ def image_analysis_call_alc(image):
     #response = model.generate_content(
     #[myfile, "\n\n", "Can you tell me what mocktails I can make using the bottles in the image?"])
     #print(f"{response.text=}")
-
+    
     response = model.generate_content(["Return a list of all the alcohol bottles in the image. Return in format of bottle,type of alc,empty/not empty in json format","\n\n", image])
     
     return response
@@ -32,7 +32,7 @@ def image_analysis_call_nonalc(image):
     #response = model.generate_content(
     #[myfile, "\n\n", "Can you tell me what mocktails I can make using the bottles in the image?"])
     #print(f"{response.text=}")
-
-    response = model.generate_content(["Return a list of all the drink bottles in the image. Return in format of bottle,type of alc,empty/not empty in json format","\n\n", image])
+    
+    response = model.generate_content(["Return a list of all the drink bottles in the image. Return in format of bottle,type of alc,empty or not empty in json format","\n\n", image])
     print("Analysis finished")
     return response
