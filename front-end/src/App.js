@@ -9,6 +9,7 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [error, setError] = useState(null);
+  const [isCameraInitializing, setIsCameraInitializing] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -21,68 +22,101 @@ function App() {
     };
   }, [stream]);
 
+  // Effect to handle video element initialization
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
   const startCamera = async () => {
+    if (isCameraInitializing) return; // Prevent multiple initialization attempts
+    
     try {
       setError(null);
-      console.log('Requesting camera access...');
-
-      // First check if media devices are available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Media devices not supported in this browser');
+      setIsCameraInitializing(true);
+      
+      // Check for secure context
+      if (!window.isSecureContext) {
+        throw new Error('Camera access requires a secure context (HTTPS)');
       }
 
+      // Check media devices support
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera access is not supported in this browser');
+      }
+
+      // Try to get the rear camera first, fall back to any available camera
       const constraints = {
         video: {
-          facingMode: 'environment',
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
       };
 
-      console.log('Getting user media with constraints:', constraints);
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Camera access granted:', mediaStream);
+      
+      if (!mediaStream.active) {
+        throw new Error('Failed to activate camera stream');
+      }
 
       setStream(mediaStream);
-
+      
+      // Wait for video to be ready
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        console.log('Stream set to video element');
-
-        // Add loadedmetadata event listener
         videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, playing video');
           videoRef.current.play().catch(e => {
-            console.error('Error playing video:', e);
+            setError(`Failed to start video playback: ${e.message}`);
           });
         };
-      } else {
-        console.error('Video ref is null');
+        
+        // Add error handler for video element
+        videoRef.current.onerror = (e) => {
+          setError(`Video playback error: ${e.target.error.message}`);
+        };
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      setError(err.message);
+      let errorMessage = err.message;
+      
+      // Provide more user-friendly error messages
+      if (err.name === 'NotAllowedError') {
+        errorMessage = 'Camera access was denied. Please allow camera access and try again.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = 'No camera found. Please ensure your device has a working camera.';
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = 'Camera is already in use by another application.';
+      }
+      
+      setError(errorMessage);
       setUploadStatus({
         type: 'error',
-        message: `Camera access error: ${err.message}`
+        message: errorMessage
       });
+      
+      // Cleanup if there was an error
+      stopCamera();
+    } finally {
+      setIsCameraInitializing(false);
     }
   };
 
   const stopCamera = () => {
     if (stream) {
-      console.log('Stopping camera stream');
       stream.getTracks().forEach(track => {
         track.stop();
-        console.log('Track stopped:', track.label);
       });
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
       setStream(null);
     }
   };
 
   const takePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) {
-      console.error('Video or canvas ref is null');
+    if (!videoRef.current || !canvasRef.current || !stream) {
+      setError('Camera is not ready. Please try again.');
       return;
     }
 
@@ -90,23 +124,22 @@ function App() {
       const video = videoRef.current;
       const canvas = canvasRef.current;
 
-      // Log video dimensions
-      console.log('Video dimensions:', video.videoWidth, video.videoHeight);
-
+      // Ensure video is actually playing and has valid dimensions
+      if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
+        throw new Error('Video stream is not ready yet');
+      }
+      
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
+      
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+      
       const photoData = canvas.toDataURL('image/jpeg', 0.8);
-      console.log('Photo taken successfully');
-
       setPhoto(photoData);
       stopCamera();
     } catch (err) {
-      console.error('Error taking photo:', err);
-      setError(err.message);
+      setError(`Failed to capture photo: ${err.message}`);
     }
   };
 
@@ -117,28 +150,33 @@ function App() {
     try {
       const response = await fetch(photo);
       const blob = await response.blob();
+      
+      // Validate file size (e.g., max 10MB)
+      if (blob.size > 10 * 1024 * 1024) {
+        throw new Error('Photo size exceeds 10MB limit');
+      }
+
       const formData = new FormData();
       formData.append('photo', blob, 'photo.jpg');
-
-      // Log the size of the photo being uploaded
-      console.log('Uploading photo, size:', blob.size);
 
       const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
 
-      if (!uploadResponse.ok) throw new Error('Upload failed');
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Upload failed');
+      }
 
       setUploadStatus({
         type: 'success',
         message: 'Photo uploaded successfully!'
       });
     } catch (err) {
-      console.error('Upload error:', err);
       setUploadStatus({
         type: 'error',
-        message: 'Failed to upload photo. Please try again.'
+        message: `Upload failed: ${err.message}`
       });
     } finally {
       setIsUploading(false);
@@ -156,21 +194,21 @@ function App() {
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
         <h1 className="text-2xl font-bold text-center mb-6">CockTAIL</h1>
-
+        
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
+        
         <div className="flex flex-col gap-4">
           {!photo ? (
             <>
               <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
                 {stream ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
                     playsInline
                     muted
                     className="w-full h-full object-cover"
@@ -181,44 +219,42 @@ function App() {
                   </div>
                 )}
               </div>
-
-              {stream ? (
-                <Button
-                  onClick={takePhoto}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  Take Photo
-                </Button>
-              ) : (
-                <Button
-                  onClick={startCamera}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  Start Camera
-                </Button>
-              )}
+              
+              <Button 
+                onClick={stream ? takePhoto : startCamera}
+                disabled={isCameraInitializing}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300"
+              >
+                {isCameraInitializing ? (
+                  'Initializing Camera...'
+                ) : stream ? (
+                  'Take Photo'
+                ) : (
+                  'Start Camera'
+                )}
+              </Button>
             </>
           ) : (
             <>
               <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                <img
-                  src={photo}
-                  alt="Captured photo"
+                <img 
+                  src={photo} 
+                  alt="Captured photo" 
                   className="w-full h-full object-cover"
                 />
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  onClick={resetApp}
+                <Button 
+                  onClick={resetApp} 
                   variant="outline"
                   className="flex-1"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Retake
                 </Button>
-                <Button
-                  onClick={uploadPhoto}
+                <Button 
+                  onClick={uploadPhoto} 
                   disabled={isUploading}
                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
                 >
