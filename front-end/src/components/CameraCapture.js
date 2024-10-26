@@ -32,7 +32,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
     try {
       setError(null);
       setIsCameraInitializing(true);
-      
+
       if (!window.isSecureContext) {
         throw new Error('Camera access requires a secure context (HTTPS)');
       }
@@ -94,7 +94,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
         throw new Error('Video stream is not ready yet');
       }
-      
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -129,13 +129,20 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
         method: 'POST',
         body: formData
       });
+      console.log(uploadResponse.status);
 
-      if (!uploadResponse.ok) {
+      if (uploadResponse.status !== 200) {
         const errorData = await uploadResponse.json().catch(() => ({}));
         throw new Error(errorData.message || 'Upload failed');
       }
-
-      setUploadStatus({ type: 'success', message: 'Photo uploaded successfully!' });
+      try {
+        setUploadStatus({ type: 'success', message: 'Photo uploaded successfully!' });
+        const data = await uploadResponse.json();
+        console.log("Success:", data);
+        
+      } catch (error) {
+        console.error("Error:", error);
+      }
 
       if (onPhotoUpload) onPhotoUpload(photo);
     } catch (err) {
@@ -154,59 +161,59 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
 
   return (
 
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
+    <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {!photo ? (
+          <>
+            <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
+              {stream ? (
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Camera className="w-16 h-16 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            <Button onClick={stream ? takePhoto : startCamera} disabled={isCameraInitializing} className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300">
+              {isCameraInitializing ? 'Initializing Camera...' : stream ? 'Take Photo' : 'Start Camera'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
+              <img src={photo} alt="Captured photo" className="w-full h-full object-cover" />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={resetCapture} variant="outline" className="flex-1">
+                <X className="w-4 h-4 mr-2" /> Retake
+              </Button>
+              <Button onClick={uploadPhoto} disabled={isUploading} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
+                {isUploading ? 'Uploading...' : (<><Upload className="w-4 h-4 mr-2" /> Upload</>)}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {uploadStatus && (
+          <Alert variant={uploadStatus.type === 'error' ? 'destructive' : 'default'}>
+            <AlertDescription className="flex items-center">
+              {uploadStatus.type === 'success' ? <Check className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
+              {uploadStatus.message}
+            </AlertDescription>
           </Alert>
         )}
-        
-        <div className="flex flex-col gap-4">
-          {!photo ? (
-            <>
-              <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                {stream ? (
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Camera className="w-16 h-16 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              
-              <Button onClick={stream ? takePhoto : startCamera} disabled={isCameraInitializing} className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300">
-                {isCameraInitializing ? 'Initializing Camera...' : stream ? 'Take Photo' : 'Start Camera'}
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                <img src={photo} alt="Captured photo" className="w-full h-full object-cover" />
-              </div>
 
-              <div className="flex gap-2">
-                <Button onClick={resetCapture} variant="outline" className="flex-1">
-                  <X className="w-4 h-4 mr-2" /> Retake
-                </Button>
-                <Button onClick={uploadPhoto} disabled={isUploading} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
-                  {isUploading ? 'Uploading...' : (<><Upload className="w-4 h-4 mr-2" /> Upload</>)}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {uploadStatus && (
-            <Alert variant={uploadStatus.type === 'error' ? 'destructive' : 'default'}>
-              <AlertDescription className="flex items-center">
-                {uploadStatus.type === 'success' ? <Check className="w-4 h-4 mr-2" /> : <X className="w-4 h-4 mr-2" />}
-                {uploadStatus.message}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <canvas ref={canvasRef} className="hidden" />
-        </div>
+        <canvas ref={canvasRef} className="hidden" />
       </div>
+    </div>
   );
 }
 

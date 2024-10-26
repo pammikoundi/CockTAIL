@@ -7,7 +7,7 @@ def image_analysis_call_alc(image):
     genai.configure(api_key="AIzaSyC7gKrKaJbpv9Tjn8d-4bQMUKCt9eOpin8")
     #print(f"{myfile=}")
 
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     #response = model.generate_content("The opposite of hot is")
     #print(response.text)
 
@@ -25,7 +25,7 @@ def image_analysis_call_nonalc(image):
     genai.configure(api_key="AIzaSyC7gKrKaJbpv9Tjn8d-4bQMUKCt9eOpin8")
     #print(f"{myfile=}")
 
-    model = genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     #response = model.generate_content("The opposite of hot is")
     #print(response.text)
 
@@ -33,6 +33,6 @@ def image_analysis_call_nonalc(image):
     #[myfile, "\n\n", "Can you tell me what mocktails I can make using the bottles in the image?"])
     #print(f"{response.text=}")
     
-    response = model.generate_content(["Return a list of all the drink bottles in the image. Return in format of bottle,type of alc,empty or not empty in json format","\n\n", image])
+    response = model.generate_content(["Return a list of all the non alcholic drink bottles in the image. Return in format of bottle,type of alc,empty or not empty in json format","\n\n", image])
     print("Analysis finished")
     return response
