@@ -8,11 +8,11 @@ export default function App() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: " What would you like to explore today?"
+      content: "What would you like to explore today?"
     },
     {
-      role: "assistant",
-      content: <CameraCapture/>
+      role: "user",
+      content: <CameraCapture />
     }
   ]);
 
@@ -37,7 +37,34 @@ export default function App() {
       
       const data = await response.json();
       console.log(data);
-      // Commented API response handling
+      // Handle the response if needed
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  const handleAddMoreDrinks = async () => {
+    const additionalPrompt = {
+      role: "user",
+      content: <CameraCapture />
+    };
+
+    setMessages([...messages, additionalPrompt]);
+
+    try {
+      const response = await fetch("", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: [...messages, additionalPrompt]
+        })
+      });
+      
+      const data = await response.json();
+      console.log(data);
+      // Handle the response if needed
     } catch (error) {
       console.error("Error:", error);
     }
@@ -58,10 +85,8 @@ export default function App() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onClick={input ? handleSubmit : undefined}
+          onAddMoreDrinks={handleAddMoreDrinks}
         />
-
-        <div className="mt-4">
-        </div>
       </div>
     </div>
   );
