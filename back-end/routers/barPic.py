@@ -18,12 +18,13 @@ async def upload_file(source_file: UploadFile = File()):
     image = Image.open(source_file.file)
     try:
         #Get ai response and parse for just the message
-        ai_response = geminiConnection.image_analysis_call(image, source_file.content_type)
-        ai_response = ""
-        print(ai_response)
+        ai_response = geminiConnection.image_analysis_call(image, source_file.content_type).text
 
     except:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="AI response was unable to be retrieved and processed.")
-    
-    #Send details to NLX
+    ai_response = ai_response.replace("`","").replace("json","")
+    ai_json = json.loads(ai_response)
+    print(ai_response)
+
+    return {"Response":ai_json}
 
