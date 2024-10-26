@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import imageEntry
+from routers import barPic
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
@@ -18,7 +18,7 @@ app.add_middleware(
 # Create FastAPI app and add middleware
 app = FastAPI()
 
-app.include_router(imageEntry.router)
+app.include_router(barPic.router)
 
 @app.get('/')
 async def redirect_docs():
