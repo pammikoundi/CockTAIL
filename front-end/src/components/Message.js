@@ -1,10 +1,13 @@
+import botIcon from "./ui/icons/bot.png";
+import userIcon from "./ui/icons/user.png";
+
 export default function Message({ role, content }) {
   return (
     <div className="flex items-start gap-4 p-4">
       <div>
         <img
-          src={role === "assistant" ? "./ui/icons/bot.png" : "./ui/icons/user.png"}
-          className="w-8 h-8 rounded-full"
+          src={role === "assistant" ? botIcon : userIcon}
+          className="w-8 h-8 rounded-fit"
           alt="profile avatar"
         />
       </div>

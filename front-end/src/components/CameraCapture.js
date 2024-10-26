@@ -123,9 +123,9 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       }
 
       const formData = new FormData();
-      formData.append('photo', blob, 'photo.jpg');
+      formData.append('source_file', blob, 'photo.jpg');
 
-      const uploadResponse = await fetch('/api/upload', {
+      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/alc', {
         method: 'POST',
         body: formData
       });

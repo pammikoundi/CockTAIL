@@ -34,5 +34,5 @@ def image_analysis_call_nonalc(image):
     #print(f"{response.text=}")
 
     response = model.generate_content(["Return a list of all the drink bottles in the image. Return in format of bottle,type of alc,empty/not empty in json format","\n\n", image])
-    
+    print("Analysis finished")
     return response

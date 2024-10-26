@@ -40,7 +40,7 @@ async def upload_file(source_file: UploadFile = File()):
     try:
         #Get ai response and parse for just the message
         ai_response = geminiConnection.image_analysis_call_nonalc(image).text
-
+        
     except:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="AI response was unable to be retrieved and processed.")
     ai_response = ai_response.replace("`","").replace("json","")
