@@ -9,7 +9,7 @@ router = APIRouter()
 
 #Upload image and get gemimi response return.
 @router.post("/upload/", status_code=status.HTTP_200_OK)
-async def image_analysis_call(source_file: UploadFile = File()):
+async def analysis_call(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   
     if(source_file.content_type.find("image/") == -1):
@@ -18,12 +18,11 @@ async def image_analysis_call(source_file: UploadFile = File()):
     image = Image.open(source_file.file)
     try:
         #Get ai response and parse for just the message
-        ai_response = geminiConnection.image_analysis_call_alc(image).text
+        ai_response = geminiConnection.image_analysis_call(image).text
 
     except:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="AI response was unable to be retrieved and processed.")
     ai_response = ai_response.replace("`","").replace("json","")
-    ai_json = json.loads(ai_response)
     print(ai_response)
 
-    return {"Response":ai_json}
+    return {"Response":ai_response}
