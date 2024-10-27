@@ -42,7 +42,7 @@ def user_login(request):
             user = authenticate(request, username=username, password=password)
             if user:
                 login(request, user)
-                return redirect('map_view')
+                return redirect('')
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
