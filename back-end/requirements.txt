@@ -1,7 +1,8 @@
 #ASGI Server
 uvicorn
 #API framework
-fastapi
+flask
+flask_cors
 #Image manipulation
 pillow
 #Artificial Intelligence

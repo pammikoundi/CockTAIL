@@ -132,17 +132,18 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       const formData = new FormData();
       formData.append('source_file', blob, 'photo.jpg');
 
-      const uploadResponse = await fetch('http://127.0.0.1:8000/upload/', {
+      const uploadResponse = await fetch('http://127.0.0.1:5000/upload/', {
         method: 'POST',
         body: formData
       });
 
-      if (uploadResponse.ok) {  // Check if the response is successful
-        let responseData = await uploadResponse.json();
+      if (uploadResponse.ok) {
+        const responseData = await uploadResponse.json();
         setUploadStatus({ type: 'success', message: 'Photo uploaded successfully!' });
         if (onPhotoUpload) {
-          onPhotoUpload(responseData || { success: true });
+          onPhotoUpload(responseData);
         }
+        resetCapture(); // Reset after successful upload
       } else {
         throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
