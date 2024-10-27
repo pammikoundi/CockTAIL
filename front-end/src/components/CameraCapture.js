@@ -128,10 +128,11 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       if (blob.size > 10 * 1024 * 1024) {
         throw new Error('Photo size exceeds 10MB limit');
       }
+      
       const formData = new FormData();
       formData.append('source_file', blob, 'photo.jpg');
 
-      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/', {
+      const uploadResponse = await fetch('http://127.0.0.1:8000/upload/', {
         method: 'POST',
         body: formData
       });

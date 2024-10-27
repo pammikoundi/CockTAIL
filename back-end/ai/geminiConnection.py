@@ -16,6 +16,6 @@ def image_analysis_call(image):
     #print(f"{response.text=}")
     
     prevMessage = model.generate_content(["Return a list of all the  drink bottles in the image. If non is detected return none","\n\n", image]).text
-    response = model.generate_content([prevMessage,"Return a cocktail recipe from the given drinks.","\n\n"])
+    response = model.generate_content([prevMessage,"Return a cocktail recipe from the given drinks. If not enough ingredients please say not enough ingredients","\n\n"])
     print("Analysis finished")
     return response
