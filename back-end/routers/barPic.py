@@ -9,7 +9,7 @@ router = APIRouter()
 
 #Upload image and get gemimi response return.
 @router.post("/upload/alc", status_code=status.HTTP_200_OK)
-async def upload_file(source_file: UploadFile = File()):
+async def upload_alc_file(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   
     if(source_file.content_type.find("image/") == -1):
@@ -30,7 +30,7 @@ async def upload_file(source_file: UploadFile = File()):
 
 #Upload image and get gemimi response return.
 @router.post("/upload/nonalc", status_code=status.HTTP_200_OK)
-async def upload_file(source_file: UploadFile = File()):
+async def upload_non_file(source_file: UploadFile = File()):
 
     # Check file type and reject non image files   
     if(source_file.content_type.find("image/") == -1):
@@ -40,6 +40,22 @@ async def upload_file(source_file: UploadFile = File()):
     try:
         #Get ai response and parse for just the message
         ai_response = geminiConnection.image_analysis_call_nonalc(image).text
+        
+    except:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="AI response was unable to be retrieved and processed.")
+    ai_response = ai_response.replace("`","").replace("json","")
+    ai_json = json.loads(ai_response)
+    print(ai_response)
+
+    return {"Response":ai_json}
+
+#Upload image and get gemimi response return.
+@router.post("/chat", status_code=status.HTTP_200_OK)
+async def cocktail():
+
+    try:
+        #Get ai response and parse for just the message
+        ai_response = geminiConnection.cocktail_return().text
         
     except:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="AI response was unable to be retrieved and processed.")

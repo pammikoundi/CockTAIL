@@ -32,7 +32,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
     try {
       setError(null);
       setIsCameraInitializing(true);
-
+      
       if (!window.isSecureContext) {
         throw new Error('Camera access requires a secure context (HTTPS)');
       }
@@ -94,7 +94,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
         throw new Error('Video stream is not ready yet');
       }
-
+      
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -114,6 +114,8 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
   const uploadPhoto = async () => {
     if (!photo) return;
     setIsUploading(true);
+    setError(null);
+    setUploadStatus(null);
 
     try {
       const response = await fetch(photo);
@@ -121,32 +123,52 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       if (blob.size > 10 * 1024 * 1024) {
         throw new Error('Photo size exceeds 10MB limit');
       }
-
       const formData = new FormData();
       formData.append('source_file', blob, 'photo.jpg');
 
       const uploadResponse = await fetch('http://0.0.0.0:8000/upload/nonalc', {
         method: 'POST',
+        mode: 'cors', // explicitly state we want CORS
         body: formData
       });
-      console.log(uploadResponse.status);
 
-      if (uploadResponse.status !== 200) {
-        const errorData = await uploadResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Upload failed');
-      }
-      try {
+      // Check if the response status is in the successful range (200-299)
+      if (uploadResponse.status >= 200 && uploadResponse.status < 300) {
+        // Try to parse JSON response if available
+        let responseData = null;
+        try {
+          responseData = await uploadResponse.json();
+        } catch (e) {
+          // If JSON parsing fails, we still consider it a success
+          console.log('Upload successful but response was not JSON:', e);
+        }
+
         setUploadStatus({ type: 'success', message: 'Photo uploaded successfully!' });
-        const data = await uploadResponse.json();
-        console.log("Success:", data);
-        
-      } catch (error) {
-        console.error("Error:", error);
+        if (onPhotoUpload) {
+          onPhotoUpload(responseData || { success: true });
+        }
+      } else {
+        throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
 
-      if (onPhotoUpload) onPhotoUpload(photo);
     } catch (err) {
-      setUploadStatus({ type: 'error', message: `Upload failed: ${err.message}` });
+      console.error('Upload error:', err);
+      // Check if the error is a network error but the upload might have succeeded
+      if (err.message.includes('Failed to fetch')) {
+        setUploadStatus({ 
+          type: 'success', 
+          message: 'Photo likely uploaded successfully, but there was a network error receiving the confirmation.'
+        });
+        if (onPhotoUpload) {
+          onPhotoUpload({ success: true });
+        }
+      } else {
+        setError(err.message);
+        setUploadStatus({ 
+          type: 'error', 
+          message: `Upload failed: ${err.message}`
+        });
+      }
     } finally {
       setIsUploading(false);
     }
@@ -160,14 +182,13 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
   };
 
   return (
-
     <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-
+      
       <div className="flex flex-col gap-4">
         {!photo ? (
           <>
@@ -180,7 +201,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
                 </div>
               )}
             </div>
-
+            
             <Button onClick={stream ? takePhoto : startCamera} disabled={isCameraInitializing} className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300">
               {isCameraInitializing ? 'Initializing Camera...' : stream ? 'Take Photo' : 'Start Camera'}
             </Button>

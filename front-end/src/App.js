@@ -1,4 +1,5 @@
-import { useState } from "react";
+// App.js
+import React, { useState } from "react";
 import Message from "./components/Message";
 import Input from "./components/Input";
 import CameraCapture from "./components/CameraCapture";
@@ -9,12 +10,34 @@ export default function App() {
     {
       role: "assistant",
       content: "What would you like to explore today?"
-    },
-    {
-      role: "user",
-      content: <CameraCapture />
     }
   ]);
+
+  // Helper function to filter out CameraCapture messages
+  const filterCameraCaptureMessages = (msgs) => {
+    return msgs.filter(msg => {
+      // Check if content is a React element and specifically a CameraCapture component
+      const isCameraCapture = React.isValidElement(msg.content) && 
+        msg.content.type === CameraCapture;
+      return !isCameraCapture;
+    });
+  };
+
+  const handlePhotoUpload = (uploadResponse) => {
+    if (uploadResponse?.success) {
+      setMessages(prevMessages => [
+        ...prevMessages,
+        {
+          role: "user",
+          content: "Photo uploaded successfully"
+        },
+        {
+          role: "assistant",
+          content: "I've received your photo. Would you like to upload another or proceed with something else?"
+        }
+      ]);
+    }
+  };
 
   const handleSubmit = async () => {
     const prompt = {
@@ -23,51 +46,46 @@ export default function App() {
     };
 
     setMessages([...messages, prompt]);
+    setInput(""); // Clear input after submission
 
     try {
+      // Filter out CameraCapture messages before sending to AI
+      const filteredMessages = filterCameraCaptureMessages([...messages, prompt]);
+
       const response = await fetch("", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          messages: [...messages, prompt]
+          messages: filteredMessages
         })
       });
       
       const data = await response.json();
-      console.log(data);
-      // Handle the response if needed
+      if (data) {
+        setMessages(prevMessages => [...prevMessages, {
+          role: "assistant",
+          content: data.content || "Received your message"
+        }]);
+      }
     } catch (error) {
       console.error("Error:", error);
+      setMessages(prevMessages => [...prevMessages, {
+        role: "assistant",
+        content: "Sorry, there was an error processing your request."
+      }]);
     }
   };
 
-  const handleAddMoreDrinks = async () => {
-    const additionalPrompt = {
-      role: "user",
-      content: <CameraCapture />
-    };
-
-    setMessages([...messages, additionalPrompt]);
-
-    try {
-      const response = await fetch("", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          messages: [...messages, additionalPrompt]
-        })
-      });
-      
-      const data = await response.json();
-      console.log(data);
-      // Handle the response if needed
-    } catch (error) {
-      console.error("Error:", error);
-    }
+  const handleAddMoreDrinks = () => {
+    setMessages(prevMessages => [
+      ...prevMessages,
+      {
+        role: "user",
+        content: <CameraCapture onPhotoUpload={handlePhotoUpload} />
+      }
+    ]);
   };
 
   return (
