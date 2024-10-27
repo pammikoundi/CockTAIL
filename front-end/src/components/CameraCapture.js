@@ -57,20 +57,24 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      let errorMessage = err.message;
-      if (err.name === 'NotAllowedError') {
-        errorMessage = 'Camera access was denied. Please allow camera access and try again.';
-      } else if (err.name === 'NotFoundError') {
-        errorMessage = 'No camera found. Please ensure your device has a working camera.';
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = 'Camera is already in use by another application.';
-      }
-      setError(errorMessage);
-      setUploadStatus({ type: 'error', message: errorMessage });
+      handleCameraError(err);
       stopCamera();
     } finally {
       setIsCameraInitializing(false);
     }
+  };
+
+  const handleCameraError = (err) => {
+    let errorMessage = err.message;
+    if (err.name === 'NotAllowedError') {
+      errorMessage = 'Camera access was denied. Please allow camera access and try again.';
+    } else if (err.name === 'NotFoundError') {
+      errorMessage = 'No camera found. Please ensure your device has a working camera.';
+    } else if (err.name === 'NotReadableError') {
+      errorMessage = 'Camera is already in use by another application.';
+    }
+    setError(errorMessage);
+    setUploadStatus({ type: 'error', message: errorMessage });
   };
 
   const stopCamera = () => {
@@ -118,6 +122,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
     setUploadStatus(null);
 
     try {
+      // Convert base64 to Blob
       const response = await fetch(photo);
       const blob = await response.blob();
       if (blob.size > 10 * 1024 * 1024) {
@@ -126,23 +131,13 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       const formData = new FormData();
       formData.append('source_file', blob, 'photo.jpg');
 
-      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/nonalc', {
+      const uploadResponse = await fetch('http://0.0.0.0:8000/upload/', {
         method: 'POST',
-        mode: 'cors', // explicitly state we want CORS
         body: formData
       });
 
-      // Check if the response status is in the successful range (200-299)
-      if (uploadResponse.status >= 200 && uploadResponse.status < 300) {
-        // Try to parse JSON response if available
-        let responseData = null;
-        try {
-          responseData = await uploadResponse.json();
-        } catch (e) {
-          // If JSON parsing fails, we still consider it a success
-          console.log('Upload successful but response was not JSON:', e);
-        }
-
+      if (uploadResponse.ok) {  // Check if the response is successful
+        let responseData = await uploadResponse.json();
         setUploadStatus({ type: 'success', message: 'Photo uploaded successfully!' });
         if (onPhotoUpload) {
           onPhotoUpload(responseData || { success: true });
@@ -150,25 +145,10 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
       } else {
         throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
-
     } catch (err) {
       console.error('Upload error:', err);
-      // Check if the error is a network error but the upload might have succeeded
-      if (err.message.includes('Failed to fetch')) {
-        setUploadStatus({ 
-          type: 'success', 
-          message: 'Photo likely uploaded successfully, but there was a network error receiving the confirmation.'
-        });
-        if (onPhotoUpload) {
-          onPhotoUpload({ success: true });
-        }
-      } else {
-        setError(err.message);
-        setUploadStatus({ 
-          type: 'error', 
-          message: `Upload failed: ${err.message}`
-        });
-      }
+      setError(err.message);
+      setUploadStatus({ type: 'error', message: `Upload failed: ${err.message}` });
     } finally {
       setIsUploading(false);
     }
@@ -209,7 +189,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
         ) : (
           <>
             <div className="relative w-full aspect-video bg-gray-200 rounded-lg overflow-hidden">
-              <img src={photo} alt="Captured photo" className="w-full h-full object-cover" />
+              <img src={photo} alt="Captured" className="w-full h-full object-cover" />
             </div>
 
             <div className="flex gap-2">
