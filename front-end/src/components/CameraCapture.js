@@ -184,7 +184,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
               )}
             </div>
             
-            <Button onClick={stream ? takePhoto : startCamera} disabled={isCameraInitializing} className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300">
+            <Button onClick={stream ? takePhoto : startCamera} disabled={isCameraInitializing} className="w-full bg-orange-500 hover:bg-orange-600 text-white disabled:bg-orange-300">
               {isCameraInitializing ? 'Initializing Camera...' : stream ? 'Take Photo' : 'Start Camera'}
             </Button>
           </>
@@ -198,7 +198,7 @@ function CameraCapture({ onPhotoTaken, onPhotoUpload }) {
               <Button onClick={resetCapture} variant="outline" className="flex-1">
                 <X className="w-4 h-4 mr-2" /> Retake
               </Button>
-              <Button onClick={uploadPhoto} disabled={isUploading} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white">
+              <Button onClick={uploadPhoto} disabled={isUploading} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white">
                 {isUploading ? 'Uploading...' : (<><Upload className="w-4 h-4 mr-2" /> Upload</>)}
               </Button>
             </div>
